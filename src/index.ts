@@ -2,8 +2,14 @@ import {WebSocket} from 'ws'
 
 export type GameRoom = {
     id: string,
-    player1?: WebSocket,
-    player2?: WebSocket
+    player1?: Player
+    player2?: Player,
+    turn: "w"| "b",
+}
+
+export type Player = {
+  color : 'w' | 'b',
+  socket : WebSocket
 }
 
 const wss = new WebSocket.Server({ port: 8080 });
@@ -22,7 +28,7 @@ wss.on('connection', (ws : WebSocket) => {
         connectToRoom(data.room_id , ws);
         break;
       case "move":
-        makeMove(data.room_id , ws , data.from , data.to);
+        makeMove(data.room_id , ws , data.from , data.to );
         break;
     }
 
@@ -35,38 +41,72 @@ wss.on('connection', (ws : WebSocket) => {
 
 const connectToRoom = (room_id : string , ws : WebSocket) =>
 {
-  const existingRoom = gameRooms.find((room) => room.id === room_id);
+  let room : GameRoom | undefined  = gameRooms.find((room) => room.id === room_id);
+  
 
-  if(existingRoom)
+  if(room) //second player joining;
   {
-    existingRoom.player2 = ws;
-  }else
+    room.player2 = {
+      color: 'b',
+      socket : ws,
+    }
+  }else //first player joining
   {
-    const newRoom : GameRoom = {
-      id : room_id,
-      player1: ws
+    room = {
+      id: room_id,
+      turn: "w",
+      player1 : {
+        color : 'w',
+        socket : ws,
+      }
     }
 
-    gameRooms.push(newRoom);
+    gameRooms.push(room);
+    
 
+    
   }
+
+  if(room.player1  && room.player2){
+      startGame(room);
+    }
+
 }
 
 const makeMove = (room_id : string , ws : WebSocket , from : string , to : string) =>
 {
   const existingRoom = gameRooms.find((room) => room.id === room_id);
  
-  console.log(from + " " + to);
   
   if(existingRoom)
   {
-     if(ws === existingRoom.player1)
-     {
-        existingRoom.player2?.send(JSON.stringify({from : "" , to : ""}));
-     }else if(ws === existingRoom.player2)
-     {
-      existingRoom.player1?.send(JSON.stringify({from : "" , to : ""}))
-     }
+      const p1Socket = existingRoom.player1?.socket;
+      const p2Socket = existingRoom.player2?.socket;
+
+      if(ws === p1Socket)
+      {
+        p2Socket?.send(JSON.stringify({from : "" , to : ""}));
+      }else if( ws == p2Socket)
+      {
+        p1Socket?.send(JSON.stringify({from : "" , to : ""}));
+      }
+    
   }
+}
+
+const startGame = (room : GameRoom) =>
+{
+    const p1Socket = room.player1?.socket;
+    const p2Socket = room.player2?.socket;
+
+    if(p1Socket)
+    {
+      p1Socket.send(JSON.stringify({action : "start" , name : "player1" , turn : room.turn}));
+    }
+
+    if(p2Socket)
+    {
+      p2Socket.send(JSON.stringify({action : "start" , name : "player2" , turn : room.turn}));
+    }
 }
 
