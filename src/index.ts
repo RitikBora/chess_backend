@@ -28,7 +28,7 @@ wss.on('connection', (ws : WebSocket) => {
         connectToRoom(data.room_id , ws);
         break;
       case "move":
-        makeMove(data.room_id , ws , data.from , data.to );
+        makeMove(data.room_id , ws , data.from , data.to , data.turn);
         break;
     }
 
@@ -73,22 +73,23 @@ const connectToRoom = (room_id : string , ws : WebSocket) =>
 
 }
 
-const makeMove = (room_id : string , ws : WebSocket , from : string , to : string) =>
+const makeMove = (room_id : string , ws : WebSocket , from : string , to : string , turn : string) =>
 {
+
   const existingRoom = gameRooms.find((room) => room.id === room_id);
- 
   
   if(existingRoom)
   {
       const p1Socket = existingRoom.player1?.socket;
       const p2Socket = existingRoom.player2?.socket;
-
       if(ws === p1Socket)
       {
-        p2Socket?.send(JSON.stringify({from : "" , to : ""}));
-      }else if( ws == p2Socket)
+        p2Socket?.send(JSON.stringify({action: "move" , from : from , to : to , turn}));
+        
+      }else if( ws === p2Socket)
       {
-        p1Socket?.send(JSON.stringify({from : "" , to : ""}));
+        p1Socket?.send(JSON.stringify({action: "move" , from : to , to : to , turn}));
+
       }
     
   }
