@@ -88,7 +88,7 @@ const makeMove = (room_id : string , ws : WebSocket , from : string , to : strin
         
       }else if( ws === p2Socket)
       {
-        p1Socket?.send(JSON.stringify({action: "move" , from : to , to : to , turn}));
+        p1Socket?.send(JSON.stringify({action: "move" , from : from , to : to , turn}));
 
       }
     
