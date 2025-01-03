@@ -12,7 +12,7 @@ export type Player = {
   socket : WebSocket
 }
 
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: 8083 });
 
 const gameRooms : GameRoom[] = [];
 
